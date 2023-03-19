@@ -6,15 +6,10 @@ import gg.rsmod.game.event.Event
 import gg.rsmod.game.fs.def.ItemDef
 import gg.rsmod.game.fs.def.NpcDef
 import gg.rsmod.game.fs.def.ObjectDef
-import gg.rsmod.game.model.Direction
-import gg.rsmod.game.model.Tile
-import gg.rsmod.game.model.World
+import gg.rsmod.game.model.*
 import gg.rsmod.game.model.combat.NpcCombatDef
 import gg.rsmod.game.model.container.key.ContainerKey
-import gg.rsmod.game.model.entity.DynamicObject
-import gg.rsmod.game.model.entity.GroundItem
-import gg.rsmod.game.model.entity.Npc
-import gg.rsmod.game.model.entity.Player
+import gg.rsmod.game.model.entity.*
 import gg.rsmod.game.model.shop.PurchasePolicy
 import gg.rsmod.game.model.shop.Shop
 import gg.rsmod.game.model.shop.ShopCurrency
@@ -43,10 +38,6 @@ abstract class KotlinPlugin(private val r: PluginRepository, val world: World, v
      * exposed to the plugin.
      */
     private lateinit var properties: MutableMap<String, Any>
-
-    fun getSpawns(): MutableList<GroundItem> {
-        return r.itemSpawns
-    }
 
     /**
      * Get property associated with [key] casted as [T].
@@ -511,8 +502,9 @@ abstract class KotlinPlugin(private val r: PluginRepository, val world: World, v
     /**
      * Invoke [logic] when attacking with that weapon.
      */
-    fun set_weapon_combat_logic(item: Int, logic: (Plugin).() -> Unit) = r.setWeaponCombat(item, logic)
-
+    fun set_weapon_combat_logic(item: Int, logic: (Plugin).() -> Unit) {
+        r.setWeaponCombat(item, logic)
+    }
     /**
      * Invoke [logic] when [item] is removed from equipment.
      */
@@ -567,49 +559,38 @@ abstract class KotlinPlugin(private val r: PluginRepository, val world: World, v
 
     /**
      * Invoke [logic] when the the option in index [option] is clicked on a [GroundItem].
-     *
      * String option method should be used over this method whenever possible.
      */
     fun on_ground_item_option(item: Int, option: Int, logic: (Plugin).() -> Unit) = r.bindGroundItem(item, option, logic)
 
     /**
      * Set the condition of whether [item] can be picked up as a ground item.
-     *
      * @return false if the item can not be picked up.
      */
-    fun set_ground_item_condition(item: Int, plugin: Plugin.() -> Boolean) = r.setGroundItemPickupCondition(item, plugin)
+    fun setGroundItemCondition(item: Int, plugin: Plugin.() -> Boolean) = r.setGroundItemPickupCondition(item, plugin)
 
     /**
      * Invoke [plugin] when a spell is used on an item.
      */
-    fun on_spell_on_item(fromInterface: Int, fromComponent: Int, toInterface: Int, toComponent: Int, plugin: Plugin.() -> Unit) = r.bindSpellOnItem((fromInterface shl 16) or fromComponent, (toInterface shl 16) or toComponent, plugin)
+    fun onSpellOnItem(fromInterface: Int, fromComponent: Int, toInterface: Int, toComponent: Int, plugin: Plugin.() -> Unit) = r.bindSpellOnItem((fromInterface shl 16) or fromComponent, (toInterface shl 16) or toComponent, plugin)
 
     /**
      * Returns true if the item can be dropped on the floor via the 'drop' menu
      * option - return false otherwise.
      */
-    fun can_drop_item(item: Int, plugin: (Plugin).() -> Boolean) = r.bindCanItemDrop(item, plugin)
+    fun canDropItem(item: Int, plugin: (Plugin).() -> Boolean) = r.bindCanItemDrop(item, plugin)
 
     /**
      * Invoke [plugin] when [item] is used on [npc].
      */
-    fun on_item_on_npc(item: Int, npc: Int, plugin: Plugin.() -> Unit) = r.bindItemOnNpc(npc = npc, item = item, plugin = plugin)
+    fun onItemOnNpc(item: Int, npc: Int, plugin: Plugin.() -> Unit) = r.bindItemOnNpc(npc = npc, item = item, plugin = plugin)
 
-    /**
-     * tmrw:
-     * redo the items,
-     * and write when player does animation execute the plugin ->
-     * on_anim_by_player() {
-     *  player.gfx // .sound            = >("")
-     * }
-     */
-    fun on_anim_by_player(animid: Int, plugin: Plugin.() -> Unit) {
-        //@TODO
+    fun onAnim(animid: Int, plugin: Plugin.() -> Unit) = r.bindOnAnimation(animid, plugin)
+
+    fun getNpcFromTile(tile: Tile): Npc? {
+        val chunk = world.chunks.get(tile)
+        return chunk?.getEntities<Npc>(tile, EntityType.NPC)?.firstOrNull()
     }
-    fun on_anim_by_npc(anim: Int, plugin: Plugin.() -> Unit) {
-        //@TODO
-    }
-    // Add wrapText() {  "<col=colorHex> String </col>"   }
 
     fun get_all_commands(): ArrayList<String> {
         return r.get_all_commands()

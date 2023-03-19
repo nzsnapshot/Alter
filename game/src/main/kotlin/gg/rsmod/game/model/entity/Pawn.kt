@@ -492,6 +492,10 @@ abstract class Pawn(val world: World) : Entity() {
     }
 
     fun animate(id: Int, delay: Int = 0) {
+        if (this is Player) {
+            world.plugins.executeOnAnimation(this, id)
+        }
+
         animateSend(-1, 0)
         animateSend(id, delay)
     }
@@ -500,10 +504,15 @@ abstract class Pawn(val world: World) : Entity() {
         graphicSend(id, height, delay)
     }
 
-
-    fun animateSend(id: Int, delay: Int = 0) {
+    /**
+     * @disablePlayersClicks For how long to disable the players [GameClicks]
+     */
+    fun animateSend(id: Int, startDelay: Int = 0, DisablePlayerTicks: Int = 0) {
         blockBuffer.animation = id
-        blockBuffer.animationDelay = delay
+        blockBuffer.animationDelay = startDelay
+        if (this is Player) {
+            world.plugins.onAnimList[id]
+        }
         addBlock(UpdateBlockType.ANIMATION)
     }
 
@@ -512,6 +521,34 @@ abstract class Pawn(val world: World) : Entity() {
         blockBuffer.graphicHeight = height
         blockBuffer.graphicDelay = delay
         addBlock(UpdateBlockType.GFX)
+    }
+
+    fun applyTint(hue: Int = 0, saturation: Int = 0, luminance: Int = 0, opacity: Int = 0, delay: Int = 0, duration: Int = 0) {
+        blockBuffer.recolourStartCycle = delay
+        blockBuffer.recolourEndCycle = duration
+        blockBuffer.recolourHue = hue
+        blockBuffer.recolourSaturation = saturation
+        blockBuffer.recolourLuminance = luminance
+        blockBuffer.recolourOpacity = opacity
+        addBlock(UpdateBlockType.APPLY_TINT)
+    }
+
+    fun overrideLevel(level: Int) {
+        if (entityType.isPlayer) {
+            println("overrideLevel can't be applied to a player")
+            return
+        }
+        blockBuffer.overrideLevel = level
+        addBlock(UpdateBlockType.OVERRIDE_LEVEL)
+    }
+
+    fun setTempName(name: String) {
+        if (entityType.isPlayer) {
+            println("overrideLevel can't be applied to a player")
+            return
+        }
+        blockBuffer.TempName = name
+        addBlock(UpdateBlockType.NAME_CHANGE)
     }
 
     fun graphic(graphic: Graphic) {
